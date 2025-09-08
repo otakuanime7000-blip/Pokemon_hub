@@ -1,4 +1,50 @@
-Pokem.html        </main>
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موسوعة بوكيمون</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        /* Animation keyframes for the "jump" effect */
+        @keyframes jump-effect {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+        /* Apply the animation on hover to the image */
+        .pokemon-card:hover .pokemon-image {
+            animation: jump-effect 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body dir="rtl" class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Header and Search Bar -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-red-600 mb-4 animate-bounce">موسوعة بوكيمون</h1>
+            <p class="text-lg text-gray-600 mb-6">اكتشف جميع البوكيمونات من الأجيال المختلفة!</p>
+            <div class="relative max-w-lg mx-auto">
+                <input id="search-input" type="text" placeholder="ابحث عن بوكيمون..." class="w-full py-3 px-6 rounded-full border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md placeholder-gray-500 text-right">
+                <svg class="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+        </header>
+
+        <!-- Pokémon Grid -->
+        <main id="pokemon-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 mt-8">
+            <!-- Pokémon cards will be inserted here by JavaScript -->
+        </main>
 
         <!-- Loading Spinner -->
         <div id="loading-spinner" class="text-center p-8">
@@ -68,10 +114,10 @@ Pokem.html        </main>
         // Function to create and append a single Pokémon card
         function createPokemonCard(pokemon, id) {
             const card = document.createElement('div');
-            card.classList.add('bg-white', 'p-4', 'rounded-xl', 'shadow-lg', 'transform', 'hover:scale-105', 'transition-transform', 'duration-300', 'cursor-pointer', 'flex', 'flex-col', 'items-center', 'text-center', 'group');
+            card.classList.add('bg-white', 'p-4', 'rounded-xl', 'shadow-lg', 'transform', 'hover:scale-105', 'transition-transform', 'duration-300', 'cursor-pointer', 'flex', 'flex-col', 'items-center', 'text-center', 'group', 'pokemon-card');
             
             card.innerHTML = `
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" alt="${pokemon.name}" class="w-24 h-24 sm:w-32 sm:h-32 object-contain group-hover:scale-110 transition-transform duration-300">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" alt="${pokemon.name}" class="w-24 h-24 sm:w-32 sm:h-32 object-contain group-hover:scale-110 transition-transform duration-300 pokemon-image">
                 <span class="text-sm text-gray-500 mt-2">#${id}</span>
                 <h2 class="text-xl font-bold capitalize mt-1 text-gray-900 group-hover:text-red-600 transition-colors duration-300">${pokemon.name}</h2>
             `;
@@ -90,6 +136,26 @@ Pokem.html        </main>
             displayPokemon(filteredPokemon);
         });
 
+        // Function to calculate a Pokémon's stats based on level
+        function calculateStats(baseStats, level) {
+            const calculatedStats = {};
+            baseStats.forEach(stat => {
+                const statName = stat.stat.name;
+                const baseValue = stat.base_stat;
+                let finalValue;
+
+                // Simple formula to demonstrate level progression
+                if (statName === 'hp') {
+                    finalValue = Math.floor(0.01 * (2 * baseValue + 31) * level) + level + 10;
+                } else {
+                    finalValue = Math.floor(0.01 * (2 * baseValue + 31) * level) + 5;
+                }
+                
+                calculatedStats[statName] = finalValue;
+            });
+            return calculatedStats;
+        }
+
         // Function to show details for a specific Pokémon
         async function showPokemonDetails(pokemon) {
             modalContent.innerHTML = '';
@@ -100,8 +166,95 @@ Pokem.html        </main>
             try {
                 const response = await fetch(pokemon.url);
                 const data = await response.json();
-
                 const types = data.types.map(typeInfo => typeInfo.type.name).join(', ');
+                const abilities = data.abilities.map(abilityInfo => abilityInfo.ability.name).join(', ');
+
+                const baseStats = data.stats;
+
+                modalContent.innerHTML = `
+                    <img src="${data.sprites.other['official-artwork'].front_default}" alt="${data.name}" class="w-36 h-36 md:w-48 md:h-48 mx-auto mb-4">
+                    <h2 class="text-3xl md:text-4xl font-extrabold capitalize text-red-600">${data.name}</h2>
+                    <p class="text-lg text-gray-600 mb-4">#${data.id}</p>
+                    
+                    <div class="bg-gray-100 p-4 rounded-lg text-right mb-4">
+                        <div class="mb-2">
+                            <span class="font-semibold text-gray-700">النوع:</span> <span class="capitalize">${types}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="font-semibold text-gray-700">الارتفاع:</span> ${data.height / 10} م
+                        </div>
+                        <div class="mb-2">
+                            <span class="font-semibold text-gray-700">الوزن:</span> ${data.weight / 10} كجم
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">القدرات:</span> <span class="capitalize">${abilities}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-right">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">إحصائيات البوكيمون</h3>
+                        <label for="level-input" class="block text-sm font-medium text-gray-700 mb-1">اختر المستوى (1-100):</label>
+                        <input type="number" id="level-input" min="1" max="100" value="50" class="w-full py-2 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-red-500 mb-4 text-right">
+                        
+                        <ul id="stats-list" class="list-disc list-inside space-y-1 text-lg">
+                            <!-- Stats will be displayed here -->
+                        </ul>
+                    </div>
+                `;
+                
+                // Get elements for dynamic updates
+                const levelInput = document.getElementById('level-input');
+                const statsList = document.getElementById('stats-list');
+                
+                // Function to update stats display
+                function updateStatsDisplay() {
+                    const selectedLevel = parseInt(levelInput.value, 10);
+                    const calculated = calculateStats(baseStats, selectedLevel);
+                    
+                    statsList.innerHTML = '';
+                    for (const statName in calculated) {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `<span class="font-semibold capitalize">${statName.replace('-', ' ')}:</span> ${calculated[statName]}`;
+                        statsList.appendChild(listItem);
+                    }
+                }
+                
+                // Initial display
+                updateStatsDisplay();
+                
+                // Add event listener for real-time updates
+                levelInput.addEventListener('input', updateStatsDisplay);
+
+            } catch (error) {
+                console.error('Failed to fetch Pokémon details:', error);
+                modalContent.innerHTML = '<p class="text-red-500">عذراً، فشل تحميل تفاصيل البوكيمون.</p>';
+            } finally {
+                modalSpinner.classList.add('hidden');
+            }
+        }
+
+        // Function to close the modal
+        closeModalBtn.addEventListener('click', () => {
+            detailsModal.classList.remove('opacity-100');
+            detailsModal.classList.add('opacity-0');
+            setTimeout(() => {
+                detailsModal.classList.add('hidden');
+            }, 300);
+        });
+        
+        // Close modal when clicking outside
+        detailsModal.addEventListener('click', (e) => {
+            if (e.target.id === 'details-modal') {
+                closeModalBtn.click();
+            }
+        });
+
+        // Initial fetch of all Pokémon data
+        fetchAllPokemon();
+    </script>
+
+</body>
+</html>                const types = data.types.map(typeInfo => typeInfo.type.name).join(', ');
                 const abilities = data.abilities.map(abilityInfo => abilityInfo.ability.name).join(', ');
 
                 modalContent.innerHTML = `
